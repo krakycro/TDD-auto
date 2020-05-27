@@ -5,7 +5,7 @@
 namespace factory
 {
 
-const static std::string& temp(int a, int b) 
+const static std::string& temp(int** a, int b)
 {
     return std::string("a");
 } 

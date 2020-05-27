@@ -227,6 +227,7 @@ class CObject(Base):
 
         self.space = _ClassLoader(None)
         self.ret_val = _ClassLoader(None, class_type=CDataType)
+        self.fnc_parent = _ClassLoader(None)
         self.fnc_args = _ClassLoader([], class_type=CVariable)
         self.fnc_type = _ClassLoader(None)
 
@@ -275,7 +276,6 @@ class Bundle(object):
 ##############################################################################
 
 def add_dict(target: dict, output):
-    print(output, type(output), isinstance(output, Base))
     if isinstance(output, dict):
         for key, obj in output.items():
             if key not in target:

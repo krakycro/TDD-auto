@@ -27,6 +27,6 @@
                 "-i", "${workspaceFolder}/sample",
             ],
             "console": "integratedTerminal",
-        }
+        },
     ]
 }

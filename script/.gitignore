@@ -1,0 +1,3 @@
+adapter/__pycache__/**
+general/__pycache__/**
+*.pyc
