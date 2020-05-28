@@ -25,6 +25,7 @@
             "program": "${workspaceFolder}/script/script.py",
             "args": [
                 "-i", "${workspaceFolder}/sample",
+                "-o", "${workspaceFolder}/temp",
             ],
             "console": "integratedTerminal",
         },

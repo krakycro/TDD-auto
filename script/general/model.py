@@ -275,7 +275,8 @@ class CDataType(Base):
 
 class Bundle(object):
     def __init__(self):
-        self.files = {}
+        self.files_in = {}
+        # self.files_out = {}
         self.objs = {}
         self.vars = {}
         self.dtypes = {}

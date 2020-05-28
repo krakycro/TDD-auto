@@ -20,7 +20,7 @@ def main():
     print("OK!")
 
     print("Linking...")
-    linker.run(args)
+    linker.run(args.data)
     print("OK!")
 
     print("Generating...")

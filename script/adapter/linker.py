@@ -29,6 +29,7 @@ def _get_var_obj(value):
 
             var_type = re.search(r"\s*[*&]{1,2}\Z", var_name, re.MULTILINE)
             var_type = var_type.group(0) if var_type != None else None
+
             value = CDataType(
                 var_name,
                 {
@@ -54,8 +55,8 @@ def _get_var_obj(value):
 def _ger_arg_obj(value):
     if isinstance(value, str) and len(value) > 0:
         pair = re.search(
-            r"^\s*(?P<ret_val>([a-zA-Z]+\s+)*([a-zA-Z][\w:]*)\s*(\<.*?\>)?(\s*[&*]{1,2})?)\s+"
-            r"(?P<name>[a-zA-Z][\w]*)\s*(?P<list>\[\s*\])?",
+            r"^\s*(?P<ret_val>([a-zA-Z_]+\s+)*([a-zA-Z_][\w:]*)\s*(\<.*?\>)?(\s*[&*]{1,2})?)\s+"
+            r"(?P<name>[a-zA-Z_][\w]*)\s*(?P<list>\[\s*\])?",
             value,
             re.MULTILINE
         )
@@ -89,8 +90,8 @@ def _ger_arg_obj(value):
 
 ##############################################################################
 
-def _update_objs(args, data: dict):
-    for file_data in data.values():
+def _update_objs(data: Bundle, file_list: dict):
+    for file_data in file_list.values():
         for key, value in file_data.objects.var.items():
             if isinstance(file_data, CFile):
                 if isinstance(value, file_data.objects.class_type):
@@ -98,15 +99,15 @@ def _update_objs(args, data: dict):
                     if not isinstance(value.ret_val.var, Base):
                         log.log_error(f"Expected CDataType but got: {value.ret_val.var}")
 
-                    value.ret_val.var = add_dict(args.data.dtypes, value.ret_val.var)
+                    value.ret_val.var = add_dict(data.dtypes, value.ret_val.var)
 
                     arg_objs = []
                     for arg in value.fnc_args.var:
                         obj = _ger_arg_obj(arg)
                         if obj != None:
                             arg_objs.append(obj)
-                            obj.datatype.var = add_dict(args.data.dtypes, obj.datatype.var)
-                            obj = add_dict(args.data.vars, obj)
+                            obj.datatype.var = add_dict(data.dtypes, obj.datatype.var)
+                            obj = add_dict(data.vars, obj)
 
                     value.fnc_args.var = arg_objs
 
@@ -122,9 +123,9 @@ def _update_objs(args, data: dict):
 
 ##############################################################################
 
-def run(args):
+def run(data: Bundle):
 
-    _update_objs(args, args.data.files)
+    _update_objs(data, data.files_in)
 
     return True
 

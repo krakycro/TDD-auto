@@ -23,7 +23,7 @@ def arg_parser():
                         type=_folder_exist, required=True,
                         help='Input data. Mandatory field.')
     parser.add_argument('-o', "--output_folder", dest="output_folder",
-                        type=Path, required=False, default="temp",
+                        type=Path, required=False, default=Path("temp"),
                         help='Output data. Optional field.')
     parser.add_argument('-ti', "--input_type", dest='input_type',
                         type=str, default=None,

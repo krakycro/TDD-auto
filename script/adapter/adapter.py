@@ -11,11 +11,11 @@ from general.model import *
 
 def _parse_func(file_data: dict, input_data: str, space: str = None, parent: str = None):
     functions = re.finditer(
-        r"^\s*((?P<ret_val>([a-zA-Z]+\s+)*([a-zA-Z][\w:]*[\w])\s*(\<.*?\>)?)"
+        r"^\s*((?P<ret_val>([a-zA-Z]+\s+)*([a-zA-Z_][\w:]*[\w])\s*(\<.*?\>)?)"
         r"(?P<ret_type>\s*[&*]{1,2})?\s+)?"
-        r"((?P<fnc_parent>[a-zA-Z][\w:]*)::)?"
-        r"(?P<fnc_name>[a-zA-Z][\w]*)\s?"
-        r"\((?P<fnc_args>(\s*([a-zA-Z][\w:*&\[\], ]*)|([.]{3})\s*)*?)\)"
+        r"((?P<fnc_parent>[a-zA-Z_][\w:]*)::)?"
+        r"(?P<fnc_name>[a-zA-Z_][\w]*)\s?"
+        r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\[\], ]*)|([.]{3})\s*)*?)\)"
         r"(?P<fnc_type>\s*const)?"
         r"(?P<no_init>\s*{)",
         input_data,
@@ -45,20 +45,26 @@ def _parse_func(file_data: dict, input_data: str, space: str = None, parent: str
             fnc_args = ""
 
         name = item.group("fnc_name")
+        fnc_name = name
         if fnc_parent != None:
             name = fnc_parent + '::' + name
+            fnc_name = fnc_parent + '_' + name
         if space != None:
             name = space + '::' + name
-        if name in file_data:
-            continue
+            fnc_name = space + '_' + name
 
         key = ret_val + ' ' + name + '(' + fnc_args + ') ' + fnc_type
+        hash(ret_val) AAAAAAAAAAA
+        fnc_name = name + '_' + '_' + fnc_type + str(hash(ret_val + fnc_type))
+        if key in file_data:
+            continue
+
         file_data[key] = CObject(
             key,
             {
                 "space": space,
                 "ret_val": ret_val + ret_type,
-                "fnc_name": item.group("fnc_name"),
+                "fnc_name": fnc_name,
                 "fnc_parent": item.group("fnc_parent"),
                 "fnc_args": item.group("fnc_args").strip().split(","),
                 "fnc_type": item.group("fnc_type"),
@@ -96,8 +102,8 @@ def _parse_class(file_data: dict, input_data: str, space: str = None):
     classes = re.finditer(
         r"(?P<global>.*?)?"
         r"(class|struct)\s+"
-        r"(?P<name>[a-zA-Z][\w]*)(\s*:\s*"
-        r"(?P<parent>([a-zA-Z][\w:]*::)?[a-zA-Z][\w]*)\s?)?\s*"
+        r"(?P<name>[a-zA-Z_][\w]*)(\s*:\s*"
+        r"(?P<parent>([a-zA-Z_][\w:]*::)?[a-zA-Z_][\w]*)\s?)?\s*"
         r"\{(?P<body>.*?)\};\s+//\s+(class|struct)\s+(?P=name)"
         r"(?P<end>.*?\Z)",
         input_data,
@@ -122,7 +128,7 @@ def _parse_namespace(file_data: dict, input_data: str):
     namespace = re.finditer(
         r"(?P<global>.*?)?"
         r"(?P<space>namespace\s+"
-        r"(?P<name>[a-zA-Z][\w]*)\s*"
+        r"(?P<name>[a-zA-Z_][\w]*)\s*"
         r"\{(?P<body>.*?)\}\s+//\s+namespace\s+(?P=name))"
         r"(?P<end>.*?\Z)",
         input_data,
@@ -143,7 +149,7 @@ def _parse_namespace(file_data: dict, input_data: str):
 
 ##############################################################################
 
-def _file_parser(args, input_data: Path):
+def file_parser(out_data: dict, input_data: Path):
     file_data = {}
     buffer = ""
     input_type = input_data.name.split(".")[-1]
@@ -154,7 +160,7 @@ def _file_parser(args, input_data: Path):
         with open(input_data) as f:
             buffer = f.read()
         _parse_namespace(file_data, buffer)
-        file_data = add_dict(args.data.objs, file_data)
+        file_data = add_dict(out_data, file_data)
 
     # TODO: obsolete?
     # elif input_type in ["h", "hpp"]:
@@ -167,18 +173,18 @@ def _file_parser(args, input_data: Path):
 
 ##############################################################################
 
-def _dir_parser(args, parent: Path):
+def _dir_parser(data: Bundle, parent: Path):
     for item in parent.iterdir():
         if item.is_dir():
-            _dir_parser(args, item)
+            _dir_parser(data, item)
         elif item.is_file():
-            obj = _file_parser(args, item)
+            obj = file_parser(data.objs, item)
             if len(obj) > 0:
                 target = CFile(
                     item.name,
                     {"objects": obj}
                 )
-                target = add_dict(args.data.files, target)
+                target = add_dict(data.files_in, target)
 
     return True
 
@@ -193,7 +199,7 @@ def run(args):
     else:
         args.data = Bundle()
 
-    _dir_parser(args, args.input_folder)
+    _dir_parser(args.data, args.input_folder)
 
     return True
 

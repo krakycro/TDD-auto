@@ -1,10 +1,6 @@
 py_library(
     name = "script_lib",
-    srcs = glob([
-        "adapter/*",
-        "general/*",
-        "generator/*",
-    ]),
+    srcs = glob(["**/*.py"]),
 )
 
 py_binary(
