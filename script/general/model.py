@@ -227,12 +227,14 @@ class CObject(Base):
 
         self.space = _ClassLoader(None)
         self.ret_val = _ClassLoader(None, class_type=CDataType)
+        self.fnc_name = _ClassLoader(None)
         self.fnc_parent = _ClassLoader(None)
         self.fnc_args = _ClassLoader([], class_type=CVariable)
         self.fnc_type = _ClassLoader(None)
 
         # must
         self.var_linker(var_dict)
+
 
 ##############################################################################
 
@@ -243,12 +245,15 @@ class CVariable(Base):
         super().__init__(name)
 
         self.datatype = _ClassLoader(None, class_type=CDataType)
+        self.var_name = _ClassLoader(None)
         self.list = _ClassLoader(False)
 
         # must
         self.var_linker(var_dict)
 
+
 ##############################################################################
+
 
 class CDataType(Base):
 
@@ -256,14 +261,17 @@ class CDataType(Base):
         super().__init__(name)
 
         self.is_const = _ClassLoader(False)
+        self.var_name = _ClassLoader(None)
         self.var_type = _ClassLoader(None)
 
         # must
         self.var_linker(var_dict)
 
+
 ##############################################################################
-# BUNDLE
+# MAIN BUNDLE
 ##############################################################################
+
 
 class Bundle(object):
     def __init__(self):
@@ -272,8 +280,11 @@ class Bundle(object):
         self.vars = {}
         self.dtypes = {}
 
+
 ##############################################################################
+# FUNCTIONS
 ##############################################################################
+
 
 def add_dict(target: dict, output):
     if isinstance(output, dict):
@@ -301,5 +312,6 @@ def add_dict(target: dict, output):
         log.log_error(f"Unknown type: {type(output)}:{output}")
 
     return None
+
 
 ##############################################################################

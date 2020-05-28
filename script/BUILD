@@ -2,7 +2,8 @@ py_library(
     name = "script_lib",
     srcs = glob([
         "adapter/*",
-        "general/*"
+        "general/*",
+        "generator/*",
     ]),
 )
 

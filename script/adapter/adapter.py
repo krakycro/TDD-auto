@@ -1,12 +1,15 @@
 import ast
 import re
 
-from general.model import *
-import general.logger as log
 from pathlib import Path
 
+import general.logger as log
 
-def _parse_func(file_data: dict, buffer: str, space: str = None, parent: str = None):
+from general.model import *
+
+##############################################################################
+
+def _parse_func(file_data: dict, input_data: str, space: str = None, parent: str = None):
     functions = re.finditer(
         r"^\s*((?P<ret_val>([a-zA-Z]+\s+)*([a-zA-Z][\w:]*[\w])\s*(\<.*?\>)?)"
         r"(?P<ret_type>\s*[&*]{1,2})?\s+)?"
@@ -15,7 +18,7 @@ def _parse_func(file_data: dict, buffer: str, space: str = None, parent: str = N
         r"\((?P<fnc_args>(\s*([a-zA-Z][\w:*&\[\], ]*)|([.]{3})\s*)*?)\)"
         r"(?P<fnc_type>\s*const)?"
         r"(?P<no_init>\s*{)",
-        buffer,
+        input_data,
         re.MULTILINE
     )
     for item in functions:
@@ -33,6 +36,14 @@ def _parse_func(file_data: dict, buffer: str, space: str = None, parent: str = N
         if ret_val == None:
             ret_val = ""
 
+        fnc_type = item.group("fnc_type")
+        if fnc_type == None:
+            fnc_type = ""
+
+        fnc_args = item.group("fnc_args")
+        if fnc_args == None:
+            fnc_args = ""
+
         name = item.group("fnc_name")
         if fnc_parent != None:
             name = fnc_parent + '::' + name
@@ -41,11 +52,13 @@ def _parse_func(file_data: dict, buffer: str, space: str = None, parent: str = N
         if name in file_data:
             continue
 
-        file_data[name] = CObject(
-            name,
+        key = ret_val + ' ' + name + '(' + fnc_args + ') ' + fnc_type
+        file_data[key] = CObject(
+            key,
             {
                 "space": space,
                 "ret_val": ret_val + ret_type,
+                "fnc_name": item.group("fnc_name"),
                 "fnc_parent": item.group("fnc_parent"),
                 "fnc_args": item.group("fnc_args").strip().split(","),
                 "fnc_type": item.group("fnc_type"),
@@ -54,8 +67,32 @@ def _parse_func(file_data: dict, buffer: str, space: str = None, parent: str = N
 
     return True
 
+##############################################################################
+
+def _parse_comments(file_data: dict, input_data: str, space: str = None, parent: str = None):
+    comments = re.finditer(
+        r"(?P<global>.*?)?"
+        r"(?P<comment>(\/\/.*?\n)|(\/\*.*?\*\/))"
+        r"(?P<end>.*?\Z)",
+        input_data,
+        re.MULTILINE | re.DOTALL
+    )
+    comm_list = [comm for comm in comments]
+    if len(comm_list) > 0:
+        for comm in comm_list:
+            _parse_func(file_data, comm.group("global"), space, parent)
+            if comm.group("end") != None:
+                _parse_comments(file_data, comm.group("end"), space, parent)
+
+    else:
+        _parse_func(file_data, input_data, space, parent)
+
+    return True
+
+##############################################################################
+
 # TODO: in progress
-def _parse_class(file_data: dict, body: str, space: str = None):
+def _parse_class(file_data: dict, input_data: str, space: str = None):
     classes = re.finditer(
         r"(?P<global>.*?)?"
         r"(class|struct)\s+"
@@ -63,21 +100,23 @@ def _parse_class(file_data: dict, body: str, space: str = None):
         r"(?P<parent>([a-zA-Z][\w:]*::)?[a-zA-Z][\w]*)\s?)?\s*"
         r"\{(?P<body>.*?)\};\s+//\s+(class|struct)\s+(?P=name)"
         r"(?P<end>.*?\Z)",
-        body,
+        input_data,
         re.MULTILINE | re.DOTALL
     )
     class_list = [is_class for is_class in classes]
     if len(class_list) > 0:
         for is_class in class_list:
-            _parse_func(file_data, is_class.group("global"), space)
-            _parse_func(file_data, is_class.group("body"), space, is_class.group("name"))
+            _parse_comments(file_data, is_class.group("global"), space)
+            _parse_comments(file_data, is_class.group("body"), space, is_class.group("name"))
             if is_class.group("end") != None:
                 _parse_class(file_data, is_class.group("end"), space)
 
     else:
-        _parse_func(file_data, body, space)
+        _parse_comments(file_data, input_data, space)
 
     return True
+
+##############################################################################
 
 def _parse_namespace(file_data: dict, input_data: str):
     namespace = re.finditer(
@@ -102,13 +141,14 @@ def _parse_namespace(file_data: dict, input_data: str):
 
     return True
 
+##############################################################################
 
 def _file_parser(args, input_data: Path):
     file_data = {}
     buffer = ""
     input_type = input_data.name.split(".")[-1]
 
-    # TODO: add class init support
+    # TODO: add class init support withut "// class {name}"
     if input_type in ["c", "cpp", "h", "hpp"]:
         print(f"Parsing file: {input_data}")
         with open(input_data) as f:
@@ -116,6 +156,7 @@ def _file_parser(args, input_data: Path):
         _parse_namespace(file_data, buffer)
         file_data = add_dict(args.data.objs, file_data)
 
+    # TODO: obsolete?
     # elif input_type in ["h", "hpp"]:
     #     print(
     #         f"{input_data.name}: headers not supported, "
@@ -124,6 +165,7 @@ def _file_parser(args, input_data: Path):
 
     return file_data
 
+##############################################################################
 
 def _dir_parser(args, parent: Path):
     for item in parent.iterdir():
@@ -140,6 +182,7 @@ def _dir_parser(args, parent: Path):
 
     return True
 
+##############################################################################
 
 def run(args):
 
@@ -153,3 +196,5 @@ def run(args):
     _dir_parser(args, args.input_folder)
 
     return True
+
+##############################################################################

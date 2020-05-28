@@ -1,3 +1,2 @@
-adapter/__pycache__/**
-general/__pycache__/**
+**/__pycache__/**
 *.pyc
