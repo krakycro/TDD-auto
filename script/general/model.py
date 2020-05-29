@@ -42,23 +42,24 @@ class Base(object):  # Base class for every item class
     def __iadd__(self, other):
         members = self._get_members()
         for m in members:
-            if isinstance(getattr(other, m), _ClassLoader) \
-                    and isinstance(getattr(self, m), _ClassLoader):
-                attr = getattr(self, m)
+            c = getattr(other, m)
+            attr = getattr(self, m)
+            if isinstance(c, _ClassLoader) \
+                    and isinstance(attr, _ClassLoader):
                 if attr.var is not attr.init and attr.var is not None:
-                    c = getattr(other, m)
                     if isinstance(c.var, list):
-                        c.var.extend(getattr(self, m).var)
+                        c.var.extend(attr.var)
 
                     if isinstance(c.var, dict):
-                        c.var.update(getattr(self, m).var)
+                        add_dict(c.var, attr.var, merge = True)
+                        # c.var.update(attr.var)
 
                     else:
-                        c.var = getattr(self, m)
+                        c.var = attr
 
             else:
                 log.log_error(
-                    f"Invalid init class: {getattr(other, m)}, "
+                    f"Invalid init class: {c}, "
                     f"for {m}, must be _ClassLoader"
                 )
 
@@ -79,17 +80,18 @@ class Base(object):  # Base class for every item class
                         c = getattr(self, m)
                         if c.init is not item and item is not None:
                             if isinstance(c.var, list):
+                                if len(c.var) == 0:
+                                    c.var = list()
                                 if isinstance(item, list):
-                                    exec('self.%s.var.extend(item)' % (m))
+                                    c.var.extend(item)
 
                                 else:
-                                    exec(
-                                        'self.%s.var.append("%s")'
-                                        % (m, item)
-                                    )
+                                    c.var.append(item)
                             if isinstance(c.var, dict):
+                                if len(c.var) == 0:
+                                    c.var = dict()
                                 if isinstance(item, dict):
-                                    exec('self.%s.var.update(item)' % (m))
+                                    c.var.update(item)
 
                                 else:
                                     log.log_error(
@@ -98,11 +100,7 @@ class Base(object):  # Base class for every item class
                                     )
 
                             else:
-                                if not isinstance(item, str):
-                                    exec('self.%s.var = item' % (m))
-
-                                else:
-                                    exec('self.%s.var = "%s"' % (m, item))
+                                c.var = item
 
                     else:
                         log.log_error(
@@ -231,6 +229,7 @@ class CObject(Base):
         self.fnc_parent = _ClassLoader(None)
         self.fnc_args = _ClassLoader([], class_type=CVariable)
         self.fnc_type = _ClassLoader(None)
+        self.fnc_body = _ClassLoader(None)
 
         # must
         self.var_linker(var_dict)
@@ -287,24 +286,27 @@ class Bundle(object):
 ##############################################################################
 
 
-def add_dict(target: dict, output):
+def add_dict(target: dict, output, merge = False):
     if isinstance(output, dict):
         for key, obj in output.items():
             if key not in target:
                 target[key] = obj
 
             else:
-                print(f"Duplicate of: {key}={obj}")
+                print(f"Duplicate dict: {key}={obj}")
                 output[key] = target[key]
 
         return output
 
     elif isinstance(output, Base):
-        if output not in target:
+        if output.name.var not in target:
             target[output.name.var] = output
 
         else:
-            print(f"Duplicate: {output}")
+            print(f"Duplicate object: {output}")
+            if merge:
+                target[output.name.var] += output
+
             output = target[output.name.var]
 
         return output
