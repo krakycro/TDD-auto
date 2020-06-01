@@ -1,4 +1,5 @@
 import ast
+import os
 import re
 import hashlib 
 
@@ -156,40 +157,70 @@ def _parse_namespace(file_data: dict, input_data: str, ignore_comms: bool = Fals
 
 ##############################################################################
 
-def file_parser(out_data: dict, input_data: Path, ignore_comms: bool = False):
+def _parse_includes(target_name: Path, file_data: dict, input_data: str, ignore_comms: bool = False):
+    paths = set()
+    includes = re.finditer(
+        r"(#include\s+\"(?P<local>.+?)\")|(#include\s+\<(?P<global>.+?)\>)",
+        input_data,
+        re.MULTILINE | re.DOTALL
+    )
+
+    path_list = [path for path in includes]
+    if len(path_list) > 0:
+        for path in path_list:
+            if path.group("local") != None:
+                paths.add(path.group("local"))
+
+    _parse_namespace(file_data, input_data, ignore_comms)
+
+    return paths
+
+##############################################################################
+
+def file_parser(root: Path, out_data: dict, input_data: Path, ignore_comms: bool = False):
+    paths = set()
     file_data = {}
     buffer = ""
     input_type = input_data.name.split(".")[-1]
 
     if input_type in ["c", "cpp", "h", "hpp"]:
-        print(f"Parsing file: {input_data}")
+        log.log_info(f"Parsing file: {input_data}")
+
+        try:
+            relative = input_data.relative_to(root)
+            if input_type in ["h", "hpp"] and len(relative.name) > 0:
+                paths.add(relative.as_posix())
+        except:
+            pass
+
         with open(input_data) as f:
             buffer = f.read()
-        _parse_namespace(file_data, buffer, ignore_comms)
+
+        paths.update(_parse_includes(input_data, file_data, buffer, ignore_comms))
         file_data = add_dict(out_data, file_data)
 
     # TODO: obsolete?
     # elif input_type in ["h", "hpp"]:
-    #     print(
+    #     log.log_warning(
     #         f"{input_data.name}: headers not supported, "
     #         "all data to test should be in /srcs."
     #     )
 
-    return file_data
+    return paths, file_data
 
 ##############################################################################
 
-def _dir_parser(data: Bundle, parent: Path):
+def _dir_parser(root: Path, data: Bundle, parent: Path):
     for item in parent.iterdir():
         if item.is_dir():
-            _dir_parser(data, item)
+            _dir_parser(root, data, item)
         elif item.is_file():
-            obj = file_parser(data.objs, item)
+            paths, obj = file_parser(root, data.objs, item)
             if len(obj) > 0:
                 target = CFile(
                     item.name.split(".")[0],
                     {
-                        # TODO: includes? "path": item,
+                        "paths": paths,
                         "objects": obj,
                     }
                 )
@@ -208,7 +239,7 @@ def run(args):
     else:
         args.data = Bundle()
 
-    _dir_parser(args.data, args.input_folder)
+    _dir_parser(args.input_folder, args.data, args.input_folder)
 
     return True
 

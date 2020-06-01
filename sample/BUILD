@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:public"])
+
 _COPTS = [
     "/std:c++17", # "-std=c++17",
     "-Isample",

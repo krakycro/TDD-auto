@@ -114,7 +114,7 @@ def _update_objs(data: Bundle, file_list: dict):
                 else:
                     log.log_error(f"Value: {value} not {file_data.objects.class_type}")
 
-                # print(key, value)
+                # log.log_info(key, value)
 
             else:
                 log.log_error(f"Not CFile object: {file_data}")

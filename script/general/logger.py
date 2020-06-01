@@ -9,19 +9,40 @@ IGNORE_ERROR = False
 
 ##############################################################################
 
-
 def log_error(*str_list, error=Exception):
     """
     Info: raise an error with message
 
     Return: None
     """
-    string = " ".join(str_list)
+    string = "Error: " + " ".join(str_list)
     if IGNORE_ERROR is not True:
         raise error(string)
 
     else:
         print(string)
+
+##############################################################################
+
+def log_warning(*str_list):
+    """
+    Info: display warning with message
+
+    Return: None
+    """
+    string = "Warning: " + " ".join(str_list)
+    print(string)
+
+##############################################################################
+
+def log_info(*str_list):
+    """
+    Info: display info with message
+
+    Return: None
+    """
+    string = "Info: " + " ".join(str_list)
+    print(string)
 
 
 ##############################################################################

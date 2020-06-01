@@ -25,16 +25,18 @@ def arg_parser():
     parser.add_argument('-o', "--output_folder", dest="output_folder",
                         type=Path, required=False, default=Path("temp"),
                         help='Output data. Optional field.')
-    parser.add_argument('-ti', "--input_type", dest='input_type',
+    parser.add_argument('-it', "--input_type", dest='input_type',
                         type=str, default=None,
-                        help=f'Text type (json, c). Default: auto')
-    parser.add_argument('-to', "--output_type", dest='output_type',
+                        help=f'Text type. Default: auto')
+    parser.add_argument('-ot', "--output_type", dest='output_type',
                         type=str, default=None,
-                        help=f'Text type (c, h, a2l, generic_a2l, gdb, '
-                        f'params, dcm, generic_dcm). Default: auto')
+                        help=f'Text type. Default: auto')
     parser.add_argument("--data", dest='data',
                         type=str, default=None,
                         help=f'Existing data to load. Default: None')
+    parser.add_argument("--target_label", dest='target_label',
+                        type=str, default=None,
+                        help=f'Absolute label path of project. Default: None')
     args = parser.parse_args()
 
     return args

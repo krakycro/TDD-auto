@@ -50,12 +50,15 @@ class Base(object):  # Base class for every item class
                     if isinstance(c.var, list):
                         c.var.extend(attr.var)
 
-                    if isinstance(c.var, dict):
+                    elif isinstance(c.var, dict):
                         add_dict(c.var, attr.var, merge = True)
                         # c.var.update(attr.var)
 
+                    elif isinstance(c.var, set):
+                        c.var.update(attr.var)
+
                     else:
-                        c.var = attr
+                        c.var = attr.var
 
             else:
                 log.log_error(
@@ -87,7 +90,7 @@ class Base(object):  # Base class for every item class
 
                                 else:
                                     c.var.append(item)
-                            if isinstance(c.var, dict):
+                            elif isinstance(c.var, dict):
                                 if len(c.var) == 0:
                                     c.var = dict()
                                 if isinstance(item, dict):
@@ -208,7 +211,7 @@ class CFile(Base):
     def __init__(self, name, var_dict):
         super().__init__(name)
 
-        self.path = _ClassLoader(None)
+        self.paths = _ClassLoader(None)
         self.objects = _ClassLoader({}, class_type=CObject)
 
         # must
@@ -293,7 +296,7 @@ def add_dict(target: dict, output, merge = False):
                 target[key] = obj
 
             else:
-                print(f"Duplicate dict: {key}={obj}")
+                log.log_info(f"Duplicated dict: {key}={obj}")
                 output[key] = target[key]
 
         return output
@@ -303,7 +306,7 @@ def add_dict(target: dict, output, merge = False):
             target[output.name.var] = output
 
         else:
-            print(f"Duplicate object: {output}")
+            log.log_info(f"Duplicated object: {output}")
             if merge:
                 target[output.name.var] += output
 

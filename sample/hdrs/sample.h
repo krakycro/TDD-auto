@@ -6,10 +6,12 @@
 #include <iostream>
 #include <vector>
 
-const static std::vector< std::vector< int> >&& Global();
+const std::vector< std::vector< int> >&& Global();
 
 namespace factory
 {
+
+const std::string& temp(int** a, int b);
 
 int Run(int  argc, char*  argv[ ]  );
 

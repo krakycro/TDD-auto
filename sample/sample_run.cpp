@@ -2,10 +2,15 @@
 
 #include <string>
 
+const std::vector< std::vector< int> >&& Global()
+{
+    return std::vector< std::vector< int> >();
+}
+ 
 namespace factory
 {
 
-const static std::string& temp(int** a, int b)
+const std::string& temp(int** a, int b)
 {
     return std::string("a");
 } 

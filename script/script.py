@@ -15,17 +15,17 @@ def main():
     # args.data is root database
     args = utils.arg_parser()
 
-    print("Parsing...")
+    log.log_info("Parsing...")
     adapter.run(args)
-    print("OK!")
+    log.log_info("OK!")
 
-    print("Linking...")
+    log.log_info("Linking...")
     linker.run(args.data)
-    print("OK!")
+    log.log_info("OK!")
 
-    print("Generating...")
+    log.log_info("Generating...")
     generator.run(args)
-    print("OK!")
+    log.log_info("OK!")
 
     return 0
 
