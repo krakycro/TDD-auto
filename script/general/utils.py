@@ -45,14 +45,7 @@ def arg_parser():
                         action='store_true', help=f'Ignore error log messages.')
     args = parser.parse_args()
 
-    if args.ignore_info:
-        log.IGNORE_INFO = True
-
-    if args.ignore_warning:
-        log.IGNORE_WARNING = True
-
-    if args.ignore_error:
-        log.IGNORE_ERROR = True
+    log.log_setting(args)
 
     return args
 

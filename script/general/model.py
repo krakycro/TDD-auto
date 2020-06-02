@@ -85,14 +85,17 @@ class Base(object):  # Base class for every item class
                             if isinstance(c.var, list):
                                 if len(c.var) == 0:
                                     c.var = list()
+
                                 if isinstance(item, list):
                                     c.var.extend(item)
 
                                 else:
                                     c.var.append(item)
+
                             elif isinstance(c.var, dict):
                                 if len(c.var) == 0:
                                     c.var = dict()
+
                                 if isinstance(item, dict):
                                     c.var.update(item)
 
@@ -143,6 +146,7 @@ class Base(object):  # Base class for every item class
                 if issubclass(item.class_type, Base):
                     temp_dict[self.name.var] = \
                         getattr(self, item).var.to_dict()
+
                 else:
                     temp_dict[self.name.var] = item
 
@@ -278,7 +282,6 @@ class CDataType(Base):
 class Bundle(object):
     def __init__(self):
         self.files_in = {}
-        # self.files_out = {}
         self.objs = {}
         self.vars = {}
         self.dtypes = {}

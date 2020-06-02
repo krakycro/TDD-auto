@@ -9,6 +9,19 @@ IGNORE_INFO = False
 IGNORE_WARNING = False
 IGNORE_ERROR = False
 
+##############################################################################
+
+def log_setting(args):
+    global IGNORE_INFO, IGNORE_WARNING, IGNORE_ERROR
+
+    if args.ignore_info:
+        IGNORE_INFO = True
+
+    if args.ignore_warning:
+        IGNORE_WARNING = True
+
+    if args.ignore_error:
+        IGNORE_ERROR = True
 
 ##############################################################################
 
@@ -48,6 +61,17 @@ def log_info(*str_list):
     if IGNORE_INFO is not True:
         string = "Info: " + " ".join(str_list)
         print(string)
+
+##############################################################################
+
+def log_master(*str_list):
+    """
+    Info: display info with message
+
+    Return: None
+    """
+    string = "Factory: " + " ".join(str_list)
+    print(string)
 
 
 ##############################################################################

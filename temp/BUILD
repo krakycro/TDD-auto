@@ -6,6 +6,6 @@ cc_test(
         "@gtest//:gtest_main",
 
     ],
-    srcs = glob(["sample_lib/**/*"]),
+    srcs = glob(["sample_lib/**/*.cpp"]),
 )
 

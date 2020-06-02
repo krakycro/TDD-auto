@@ -14,9 +14,9 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": true,
-            "sourceFileMap": {
-                "\\C\\Users\\fkrausadmin\\_bazel_fkrausadmin\\7qnyovvd\\execroot\\debug": "${workspaceFolder}",
-            }
+            // "sourceFileMap": {
+            //     "\\C\\Users\\fkrausadmin\\_bazel_fkrausadmin\\7qnyovvd\\execroot\\debug": "${workspaceFolder}",
+            // }
         },
         {
             "name": "(Windows) Python",
