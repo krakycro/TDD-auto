@@ -181,14 +181,14 @@ def file_parser(root: Path, out_data: dict, input_data: Path, ignore_comms: bool
     paths = set()
     file_data = {}
     buffer = ""
-    input_type = input_data.name.split(".")[-1]
+    input_type = input_data.suffix
 
-    if input_type in ["c", "cpp", "h", "hpp"]:
+    if input_type in [".c", ".cpp", ".h", ".hpp"]:
         log.log_info(f"Parsing file: {input_data}")
 
         try:
             relative = input_data.relative_to(root)
-            if input_type in ["h", "hpp"] and len(relative.name) > 0:
+            if input_type in [".h", ".hpp"] and len(relative.name) > 0:
                 paths.add(relative.as_posix())
         except:
             pass
@@ -198,13 +198,6 @@ def file_parser(root: Path, out_data: dict, input_data: Path, ignore_comms: bool
 
         paths.update(_parse_includes(input_data, file_data, buffer, ignore_comms))
         file_data = add_dict(out_data, file_data)
-
-    # TODO: obsolete?
-    # elif input_type in ["h", "hpp"]:
-    #     log.log_warning(
-    #         f"{input_data.name}: headers not supported, "
-    #         "all data to test should be in /srcs."
-    #     )
 
     return paths, file_data
 
@@ -234,10 +227,10 @@ def run(args):
 
     if args.data != None:
         # TODO: pickle or else
-        assert 1
+        log.log_error("Not yet supported!")
 
-    else:
-        args.data = Bundle()
+    # TODO: else:
+    args.data = Bundle()
 
     _dir_parser(args.input_folder, args.data, args.input_folder)
 

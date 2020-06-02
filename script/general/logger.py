@@ -5,7 +5,10 @@
 ##############################################################################
 
 TEMP_DATA_DIR = "temp_data"
+IGNORE_INFO = False
+IGNORE_WARNING = False
 IGNORE_ERROR = False
+
 
 ##############################################################################
 
@@ -30,8 +33,9 @@ def log_warning(*str_list):
 
     Return: None
     """
-    string = "Warning: " + " ".join(str_list)
-    print(string)
+    if IGNORE_WARNING is not True:
+        string = "Warning: " + " ".join(str_list)
+        print(string)
 
 ##############################################################################
 
@@ -41,8 +45,9 @@ def log_info(*str_list):
 
     Return: None
     """
-    string = "Info: " + " ".join(str_list)
-    print(string)
+    if IGNORE_INFO is not True:
+        string = "Info: " + " ".join(str_list)
+        print(string)
 
 
 ##############################################################################

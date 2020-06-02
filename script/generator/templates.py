@@ -34,29 +34,34 @@ def get_cpp_include(incl_list: set):
 
 ##############################################################################
 
-def get_cpp_template(fnc_obj: CObject, exists:str = ""):
+def get_cpp_template(fnc_obj: CObject, exists: str = "", comment: bool = False):
     """
     Info: creates a template for GTEST program
 
     Return: string
     """
     buffer = []
+    test_box = ""
 
     if len(exists) == 0:
         test_box = TEMPLATES.GTEST["test_box_new"].format(
             fnc_name = fnc_obj.name.var,
             fnc_full = fnc_obj.fnc_name.var,
         )
-        buffer.append(test_box)
-        buffer.append('\n')
 
     else:
-        exist_box = TEMPLATES.GTEST["test_box_existing"].format(
+        test_box =TEMPLATES.GTEST["test_box_existing"].format(
             fnc_name = exists,
             fnc_body = fnc_obj.fnc_body.var,
         )
-        buffer.append(exist_box)
-        buffer.append('\n')
+
+    if comment:
+        test_box = TEMPLATES.GTEST["comment"].format(
+            comment = test_box,
+        )
+
+    buffer.append(test_box)
+    buffer.append('\n')
 
     return "".join(buffer)
 

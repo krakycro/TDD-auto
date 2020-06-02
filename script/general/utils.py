@@ -37,7 +37,22 @@ def arg_parser():
     parser.add_argument("--target_label", dest='target_label',
                         type=str, default=None,
                         help=f'Absolute label path of project. Default: None')
+    parser.add_argument("--ignore_info", dest='ignore_info',
+                        action='store_true', help=f'Ignore info log messages.')
+    parser.add_argument("--ignore_warning", dest='ignore_warning',
+                        action='store_true', help=f'Ignore warning log messages.')
+    parser.add_argument("--ignore_error", dest='ignore_error',
+                        action='store_true', help=f'Ignore error log messages.')
     args = parser.parse_args()
+
+    if args.ignore_info:
+        log.IGNORE_INFO = True
+
+    if args.ignore_warning:
+        log.IGNORE_WARNING = True
+
+    if args.ignore_error:
+        log.IGNORE_ERROR = True
 
     return args
 

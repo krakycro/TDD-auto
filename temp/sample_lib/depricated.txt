@@ -1,0 +1,15 @@
+
+Timestamp: 2020-06-02 11:44:51.422581
+
+/*
+TEST(UnitTest, factory_temp_comment)
+{
+    // Test for: const std::string factory::temp(std::string) 
+	int **p{nullptr};
+	factory::temp("a");
+    auto given = true; 
+    ASSERT_EQ(true, given);
+} // TEST factory_temp_comment
+
+*/
+
