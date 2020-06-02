@@ -8,6 +8,9 @@ TEMP_DATA_DIR = "temp_data"
 IGNORE_INFO = False
 IGNORE_WARNING = False
 IGNORE_ERROR = False
+# TODO: move else
+TYPE_LIST_C = ["c", "cpp", "h", "hpp"]
+TYPE_LIST_PY = ["py"]
 
 ##############################################################################
 

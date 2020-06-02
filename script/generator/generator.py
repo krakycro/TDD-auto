@@ -21,10 +21,10 @@ def _check_and_add(func: Base, target: str, target_list: list):
 
 ##############################################################################
 
-def _check_file(data: Bundle, parent: Path):
+def _check_file(types: str, data: Bundle, parent: Path):
     old_list = {}
     valid_list = {}
-    paths, obj_list = adapter.file_parser(parent, data.objs, parent, True)
+    paths, obj_list = adapter.file_parser(types, parent, data.objs, parent, ignore_comms = True)
     if len(obj_list) > 0:
         for file_id, file_val in data.files_in.items():
             for func in obj_list.values():
@@ -48,18 +48,18 @@ def _check_file(data: Bundle, parent: Path):
 
 ##############################################################################
 
-def _dir_parser(data: Bundle, parent: Path):
+def _dir_parser(data: Bundle, parent: Path, types: str):
     valid_list = {}
     old_list = {}
     for item in parent.iterdir():
         if item.is_dir():
-            old, valid = _dir_parser(data, item)
+            old, valid = _dir_parser(data, item, types)
             valid_list.update(valid)
             old_list.update(old)
 
         elif item.is_file():
-            if item.suffix in [".c", ".cpp"]:
-                old, valid = _check_file(data, item)
+            if item.suffix[1:] in [types]:
+                old, valid = _check_file(types, data, item)
                 valid_list.update(valid)
                 old_list.update(old)
 
@@ -83,7 +83,7 @@ def _check_folder(parent: Path, project: Path, target: Path):
 
 ##############################################################################
 
-def _dir_generator(data: Bundle, depricated: dict, exist: dict,  parent: Path):
+def _dir_cpp_generator(data: Bundle, depricated: dict, exist: dict,  parent: Path):
     for file_id, file_val in data.files_in.items():
         target = Path(os.path.join(parent, file_id + ".cpp"))
         with open(target, "w") as f:
@@ -114,9 +114,9 @@ def run(args):
 
     _check_folder(args.output_folder, args.target_label, tests)
 
-    old_list, valid_list = _dir_parser(args.data, tests)
+    old_list, valid_list = _dir_parser(args.data, tests, "cpp")
 
-    _dir_generator(args.data, old_list, valid_list, tests)
+    _dir_cpp_generator(args.data, old_list, valid_list, tests)
 
     return True
 

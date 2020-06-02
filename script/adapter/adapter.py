@@ -11,17 +11,72 @@ from general.model import *
 
 ##############################################################################
 
-# TODO: add : parent{ ... } support for constructor
-def _parse_func(file_data: dict, input_data: str, space: str = None, parent: str = None):
-    functions = re.finditer(
+
+FUNCTION = \
+{
+    "cpp":
         r"^\s*((?P<ret_val>([a-zA-Z]+\s+)*([a-zA-Z_][\w:]*[\w])\s*(\<.*?\>)?)"
         r"(?P<ret_type>\s*[&*]{1,2})?\s+)?"
         r"((?P<fnc_parent>[a-zA-Z_][\w:]*)::)?"
         r"(?P<fnc_name>[a-zA-Z_][\w]*)\s?"
-        r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\[\], ]*)|([.]{3})\s*)*?)\)"
+        r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\[\],= ]*)|([.]{3})\s*)*?)\)"
         r"(?P<fnc_type>\s*const)?"
         r"(?P<fnc_start>\s*([\w:{} ]+)?{)" # TODO: test
         r"((?P<fnc_body>.*?)}\s*\/\/\s*(?P=fnc_name))?",
+    "py":
+        r"\Z", 
+}
+
+COMMENT = \
+{
+    "cpp":
+        r"(?P<global>.*?)?"
+        r"(?P<comment>(\/\/.*?\n)|(\/\*.*?\*\/))"
+        r"(?P<end>.*?\Z)",
+    "py":
+        r"\Z", 
+}
+
+CLASS = \
+{
+    "cpp":
+        r"(?P<global>.*?)?"
+        r"(class|struct)\s+"
+        r"(?P<name>[a-zA-Z_][\w]*)(\s*:\s*"
+        r"(?P<parent>([a-zA-Z_][\w:]*::)?[a-zA-Z_][\w]*)\s?)?\s*"
+        r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)"
+        r"(?P<end>.*?\Z)",
+    "py":
+        r"\Z", 
+}
+
+NAMESPACE = \
+{
+    "cpp":
+        r"(?P<global>.*?)?"
+        r"(?P<space>namespace\s+"
+        r"(?P<name>[a-zA-Z_][\w]*)\s*"
+        r"\{(?P<body>.*?)\}\s*\/\/\s*namespace\s+(?P=name))"
+        r"(?P<end>.*?\Z)",
+    "py":
+        r"\Z", 
+}
+
+INCLUDE = \
+{
+    "cpp":
+        r"(#include\s+\"(?P<local>.+?)\")|(#include\s+\<(?P<global>.+?)\>)",
+    "py":
+        r"\Z", 
+}
+
+
+##############################################################################
+
+# TODO: add : parent{ ... } support for constructor
+def _parse_func(types: str, file_data: dict, input_data: str, space: str = None, parent: str = None):
+    functions = re.finditer(
+        FUNCTION[types],
         input_data,
         re.MULTILINE | re.DOTALL
     )
@@ -78,89 +133,78 @@ def _parse_func(file_data: dict, input_data: str, space: str = None, parent: str
 
 ##############################################################################
 
-def _parse_comments(file_data: dict, input_data: str, space: str = None, parent: str = None, ignore_comms: bool = False):
+def _parse_comments(types: str, file_data: dict, input_data: str, space: str = None, parent: str = None, ignore_comms: bool = False):
 
     if not ignore_comms:
         comments = re.finditer(
-            r"(?P<global>.*?)?"
-            r"(?P<comment>(\/\/.*?\n)|(\/\*.*?\*\/))"
-            r"(?P<end>.*?\Z)",
+            COMMENT[types],
             input_data,
             re.MULTILINE | re.DOTALL
         )
         comm_list = [comm for comm in comments]
         if len(comm_list) > 0:
             for comm in comm_list:
-                _parse_func(file_data, comm.group("global"), space = space, parent = parent)
+                _parse_func(types, file_data, comm.group("global"), space = space, parent = parent)
                 if comm.group("end") != None:
-                    _parse_comments(file_data, comm.group("end"), space = space, parent = parent)
+                    _parse_comments(types, file_data, comm.group("end"), space = space, parent = parent)
 
         else:
-            _parse_func(file_data, input_data, space, parent)
+            _parse_func(types, file_data, input_data, space, parent)
 
     else: 
-        _parse_func(file_data, input_data, space, parent)
+        _parse_func(types, file_data, input_data, space, parent)
 
     return True
 
 ##############################################################################
 
 # TODO: add class init support withut "// class {name}"
-def _parse_class(file_data: dict, input_data: str, space: str = None, ignore_comms: bool = False):
+def _parse_class(types: str, file_data: dict, input_data: str, space: str = None, ignore_comms: bool = False):
     classes = re.finditer(
-        r"(?P<global>.*?)?"
-        r"(class|struct)\s+"
-        r"(?P<name>[a-zA-Z_][\w]*)(\s*:\s*"
-        r"(?P<parent>([a-zA-Z_][\w:]*::)?[a-zA-Z_][\w]*)\s?)?\s*"
-        r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)"
-        r"(?P<end>.*?\Z)",
+        CLASS[types],
         input_data,
         re.MULTILINE | re.DOTALL
     )
     class_list = [is_class for is_class in classes]
     if len(class_list) > 0:
         for is_class in class_list:
-            _parse_comments(file_data, is_class.group("global"), space = space, ignore_comms = ignore_comms)
-            _parse_comments(file_data, is_class.group("body"), space = space, parent = is_class.group("name"), ignore_comms = ignore_comms)
+            _parse_comments(types, file_data, is_class.group("global"), space = space, ignore_comms = ignore_comms)
+            _parse_comments(types, file_data, is_class.group("body"), space = space, parent = is_class.group("name"), ignore_comms = ignore_comms)
             if is_class.group("end") != None:
-                _parse_class(file_data, is_class.group("end"), space = space, ignore_comms = ignore_comms)
+                _parse_class(types, file_data, is_class.group("end"), space = space, ignore_comms = ignore_comms)
 
     else:
-        _parse_comments(file_data, input_data, space = space, ignore_comms = ignore_comms)
+        _parse_comments(types, file_data, input_data, space = space, ignore_comms = ignore_comms)
 
     return True
 
 ##############################################################################
 
-def _parse_namespace(file_data: dict, input_data: str, ignore_comms: bool = False):
+def _parse_namespace(types: str, file_data: dict, input_data: str, ignore_comms: bool = False):
     namespace = re.finditer(
-        r"(?P<global>.*?)?"
-        r"(?P<space>namespace\s+"
-        r"(?P<name>[a-zA-Z_][\w]*)\s*"
-        r"\{(?P<body>.*?)\}\s*\/\/\s*namespace\s+(?P=name))"
-        r"(?P<end>.*?\Z)",
+        NAMESPACE[types],
         input_data,
         re.MULTILINE | re.DOTALL
     )
     space_list = [space for space in namespace]
     if len(space_list) > 0:
         for space in space_list:
-            _parse_class(file_data, space.group("global"), ignore_comms = ignore_comms)
-            _parse_class(file_data, space.group("body"), space = space.group("name"), ignore_comms = ignore_comms)
+            _parse_class(types, file_data, space.group("global"), ignore_comms = ignore_comms)
+            _parse_class(types, file_data, space.group("body"), space = space.group("name"), ignore_comms = ignore_comms)
             if space.group("end") != None:
-                _parse_namespace(file_data, space.group("end"), ignore_comms)
+                _parse_namespace(types, file_data, space.group("end"), ignore_comms)
 
     else:
-        _parse_class(file_data, input_data, ignore_comms = ignore_comms)
+        _parse_class(types, file_data, input_data, ignore_comms = ignore_comms)
 
     return True
 
 ##############################################################################
 
-def _parse_includes(target_name: Path, file_data: dict, input_data: str, ignore_comms: bool = False):
+def _parse_includes(types: str, target_name: Path, file_data: dict, input_data: str, ignore_comms: bool = False):
     paths = set()
     includes = re.finditer(
-        r"(#include\s+\"(?P<local>.+?)\")|(#include\s+\<(?P<global>.+?)\>)",
+        INCLUDE[types],
         input_data,
         re.MULTILINE | re.DOTALL
     )
@@ -171,44 +215,56 @@ def _parse_includes(target_name: Path, file_data: dict, input_data: str, ignore_
             if path.group("local") != None:
                 paths.add(path.group("local"))
 
-    _parse_namespace(file_data, input_data, ignore_comms)
+    _parse_namespace(types, file_data, input_data, ignore_comms)
 
     return paths
 
 ##############################################################################
 
-def file_parser(root: Path, out_data: dict, input_data: Path, ignore_comms: bool = False):
+def file_parser(types: str, root: Path, out_data: dict, input_data: Path, ignore_comms: bool = False):
     paths = set()
     file_data = {}
     buffer = ""
-    input_type = input_data.suffix
+    input_type = input_data.suffix[1:]
 
-    if input_type in [".c", ".cpp", ".h", ".hpp"]:
-        log.log_info(f"Parsing file: {input_data}")
+    if types in log.TYPE_LIST_C:
+        if input_type in log.TYPE_LIST_C:
+            log.log_info(f"Parsing file: {input_data}")
 
-        try:
-            relative = input_data.relative_to(root)
-            if input_type in [".h", ".hpp"] and len(relative.name) > 0:
-                paths.add(relative.as_posix())
-        except:
+            try:
+                relative = input_data.relative_to(root)
+                if input_type in ["h", "hpp"] and len(relative.name) > 0:
+                    paths.add(relative.as_posix())
+            except:
+                pass
+
+            with open(input_data) as f:
+                buffer = f.read()
+
+            paths.update(_parse_includes("cpp", input_data, file_data, buffer, ignore_comms))
+            file_data = add_dict(out_data, file_data)
+
+    elif types in log.TYPE_LIST_PY:
+        if input_type in log.TYPE_LIST_PY:
             pass
+        log.log_error(f"Python not yet supported!")
 
-        with open(input_data) as f:
-            buffer = f.read()
-
-        paths.update(_parse_includes(input_data, file_data, buffer, ignore_comms))
-        file_data = add_dict(out_data, file_data)
+    else:
+        log.log_info(f"Unknown type: {types}")
 
     return paths, file_data
 
 ##############################################################################
 
-def _dir_parser(root: Path, data: Bundle, parent: Path):
+def _dir_parser(types: str, root: Path, data: Bundle, parent: Path):
     for item in parent.iterdir():
         if item.is_dir():
-            _dir_parser(root, data, item)
+            _dir_parser(types, root, data, item)
         elif item.is_file():
-            paths, obj = file_parser(root, data.objs, item)
+            if len(item.suffix) > 0 and types == None:
+                types = item.suffix[1:]
+
+            paths, obj = file_parser(types, root, data.objs, item)
             if len(obj) > 0:
                 target = CFile(
                     item.name.split(".")[0],
@@ -232,7 +288,7 @@ def run(args):
     # TODO: else:
     args.data = Bundle()
 
-    _dir_parser(args.input_folder, args.data, args.input_folder)
+    _dir_parser(args.input_type, args.input_folder, args.data, args.input_folder)
 
     return True
 
