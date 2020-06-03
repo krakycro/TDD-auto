@@ -114,9 +114,13 @@ def run(args):
 
     _check_folder(args.output_folder, args.target_label, tests)
 
-    old_list, valid_list = _dir_parser(args.data, tests, "cpp")
+    if args.data.ptype in log.TYPE_LIST_C:
+        old_list, valid_list = _dir_parser(args.data, tests, "cpp")
 
-    _dir_cpp_generator(args.data, old_list, valid_list, tests)
+        _dir_cpp_generator(args.data, old_list, valid_list, tests)
+
+    else:
+        log.log_error(f"Not yet support for generating {data.ptype}!")
 
     return True
 

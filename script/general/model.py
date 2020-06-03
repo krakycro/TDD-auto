@@ -285,6 +285,7 @@ class Bundle(object):
         self.objs = {}
         self.vars = {}
         self.dtypes = {}
+        self.ptype = None
 
 
 ##############################################################################

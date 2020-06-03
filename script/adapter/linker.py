@@ -125,7 +125,11 @@ def _update_cpp_objs(data: Bundle, file_list: dict):
 
 def run(data: Bundle):
 
-    _update_cpp_objs(data, data.files_in)
+    if data.ptype in log.TYPE_LIST_C:
+        _update_cpp_objs(data, data.files_in)
+
+    else:
+        log.log_error(f"Not yet support for linking {data.ptype}!")
 
     return True
 
