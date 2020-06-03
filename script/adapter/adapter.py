@@ -24,7 +24,8 @@ FUNCTION = \
         r"(?P<fnc_start>\s*([\w:{} ]+)?{)" # TODO: test
         r"((?P<fnc_body>.*?)}\s*\/\/\s*(?P=fnc_name))?",
     "py":
-        r"\Z", 
+        r"def\s+(?P<fnc_name>[a-zA-Z_][\w]*)\s?"
+        r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\[\],= ]*)|([.]{3})\s*)*?)\):", 
 }
 
 COMMENT = \
@@ -34,7 +35,9 @@ COMMENT = \
         r"(?P<comment>(\/\/.*?\n)|(\/\*.*?\*\/))"
         r"(?P<end>.*?\Z)",
     "py":
-        r"\Z", 
+        r"(?P<global>.*?)?"
+        r"(?P<comment>(#.*?\n)|((\'|\"){3}.*?(\'|\"){3}))"
+        r"(?P<end>.*?\Z)",
 }
 
 CLASS = \
@@ -47,7 +50,19 @@ CLASS = \
         r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)"
         r"(?P<end>.*?\Z)",
     "py":
-        r"\Z", 
+        r"(?P<global>(.|\s)*?)?"
+        r"class\s+"
+        r"(?P<name>[a-zA-Z_][\w]*)\s*"
+        r"(?P<parent>\((\s*([a-zA-Z_][\w, ]*)\s*)*?\))?"
+        r":\n+(?P<ident> +)"
+        r"(?P<body>(.*\n+(?P=ident))+.*\n)"
+        r"(?P<end>(.|\s)*?\Z)", 
+}
+
+CLASS_FLAGS = \
+{
+    "cpp": re.MULTILINE | re.DOTALL,
+    "py": re.MULTILINE,
 }
 
 NAMESPACE = \
@@ -59,7 +74,7 @@ NAMESPACE = \
         r"\{(?P<body>.*?)\}\s*\/\/\s*namespace\s+(?P=name))"
         r"(?P<end>.*?\Z)",
     "py":
-        r"\Z", 
+        r"\Z^", 
 }
 
 INCLUDE = \
@@ -67,7 +82,7 @@ INCLUDE = \
     "cpp":
         r"(#include\s+\"(?P<local>.+?)\")|(#include\s+\<(?P<global>.+?)\>)",
     "py":
-        r"\Z", 
+        r"(?P<global>(from\s+[a-zA-Z_][\w.]*\s+)?(import)\s+[a-zA-Z_*][\w.]*)(\s+as\s+[a-zA-Z_][\w.]*)?", 
 }
 
 
@@ -163,7 +178,7 @@ def _parse_class(types: str, file_data: dict, input_data: str, space: str = None
     classes = re.finditer(
         CLASS[types],
         input_data,
-        re.MULTILINE | re.DOTALL
+        CLASS_FLAGS[types]
     )
     class_list = [is_class for is_class in classes]
     if len(class_list) > 0:
