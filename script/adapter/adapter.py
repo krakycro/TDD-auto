@@ -19,13 +19,13 @@ FUNCTION = \
         r"(?P<ret_type>\s*[&*]{1,2})?\s+)?"
         r"((?P<fnc_parent>[a-zA-Z_][\w:]*)::)?"
         r"(?P<fnc_name>[a-zA-Z_][\w]*)\s?"
-        r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\[\],= \t]*)|([.]{3})\s*)*?)\)"
+        r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\{\}\[\],=\"\' \t]*)|([.]{3})\s*)*?)\)"
         r"(?P<fnc_type>\s*const)?"
         r"(?P<fnc_start>\s*([\w:{}() \t]+)?{)" # TODO: test
         r"((?P<fnc_body>.*?)}\s*\/\/\s*(?P=fnc_name))?",
     "py":
         r"def([ \t]|(\\\n))+(?P<fnc_name>[a-zA-Z_][\w]*)([ \t]|(\\\n))?"
-        r"\((?P<fnc_args>(\s*[a-zA-Z_][\w:*&\[\],= \t]*\s*)*?)\)"
+        r"\((?P<fnc_args>(\s*[a-zA-Z_][\w:*&\{\}\[\],=\"\' \t]*\s*)*?)\)"
         r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)(?=\w)"
         r"(?P<fnc_body>(.*\n+(?P=ident))*.*\n)"
         r"(?P<ret_val>\Z^)?"
@@ -44,18 +44,15 @@ FUNCTION_FLAGS = \
 COMMENT = \
 {
     "cpp":
-        r"(?P<global>.*?)?"
-        r"(?P<comment>(\/\/.*?\n)|(\/\*.*?\*\/))"
-        r"(?P<end>.*?\Z)",
+        r"(?P<comment>(\/\/.*?\n)|(\/\*.*?\*\/))",
     "py":
-        r"(?P<global>.*?)?"
-        r"(?P<comment>(#.*?\n)|((\'|\"){3}.*?(\'|\"){3}))"
-        r"(?P<end>.*?\Z)",
+        r"(?P<comment>(#.*?\n)|((\'|\"){3}.*?(\'|\"){3}))",
 }
 
 CLASS = \
 {
     "cpp":
+        # TODO: try to remove global and end
         r"(?P<global>.*?)?"
         r"(class|struct)\s+"
         r"(?P<name>[a-zA-Z_][\w]*)(\s*:\s*"
@@ -63,13 +60,13 @@ CLASS = \
         r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)"
         r"(?P<end>.*?\Z)",
     "py":
-        r"(?P<global>(.|\s)*?)?"
+        r"(?P<global>(.|\n)*?)?"
         r"class([ \t]|(\\\n))+"
         r"(?P<name>[a-zA-Z_][\w]*)([ \t]|(\\\n))*"
         r"(?P<parent>\((\s*([a-zA-Z_][\w, \t]*)\s*)*?\))?"
         r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)(?=\w)"
         r"(?P<body>(.*\n+(?P=ident))*.*\n)"
-        r"(?P<end>(.|\s)*?\Z)",
+        r"(?P<end>(.|\n)*?\Z)",
 }
 
 CLASS_FLAGS = \
@@ -81,6 +78,7 @@ CLASS_FLAGS = \
 NAMESPACE = \
 {
     "cpp":
+        # TODO: try to remove global and end
         r"(?P<global>.*?)?"
         r"(?P<space>namespace\s+"
         r"(?P<name>[a-zA-Z_][\w]*)\s*"
@@ -114,7 +112,7 @@ def _parse_func(types: str, file_data: dict, input_data: str, space: str = None,
     )
     for item in functions:
         fnc_parent = item.group("fnc_parent")
-        if fnc_parent == None:
+        if fnc_parent == None or len(fnc_parent) == 0:
             fnc_parent = parent if parent != None else None
         elif parent != None:
             log.log_error(f"Parent {parent} clashes with {fnc_parent}")
@@ -166,37 +164,24 @@ def _parse_func(types: str, file_data: dict, input_data: str, space: str = None,
 ##############################################################################
 
 def _parse_comments(types: str, file_data: dict, input_data: str, space: str = None, parent: str = None, use_class = False):
-
-    comments = re.finditer(
+    input_data = re.sub(
         COMMENT[types],
+        "",
         input_data,
         re.MULTILINE | re.DOTALL
     )
-    comm_list = [comm for comm in comments]
-    if len(comm_list) > 0:
-        for comm in comm_list:
-            if comm.group("global") != None and len(comm.group("global")) > 0:
-                if use_class:
-                    _parse_class(types, file_data, comm.group("global"), space = space, ignore_comms = True)
 
-                else:
-                    _parse_func(types, file_data, comm.group("global"), space = space, parent = parent)
-
-            if comm.group("end") != None and len(comm.group("end")) > 0:
-                _parse_comments(types, file_data, comm.group("end"), space = space, parent = parent)
+    if use_class:
+        _parse_class(types, file_data, input_data, space = space, ignore_comms = True)
 
     else:
-        if use_class:
-            _parse_class(types, file_data, input_data, space = space, ignore_comms = True)
-
-        else:
-            _parse_func(types, file_data, input_data, space = space, parent = parent)
+        _parse_func(types, file_data, input_data, space = space, parent = parent)
 
     return True
 
 ##############################################################################
 
-# TODO: add class init support withut "// class {name}"
+# TODO: add cpp class init support without "// class {name}"
 def _parse_class(types: str, file_data: dict, input_data: str, space: str = None, ignore_comms: bool = False):
     classes = re.finditer(
         CLASS[types],
@@ -221,7 +206,7 @@ def _parse_class(types: str, file_data: dict, input_data: str, space: str = None
                     _parse_comments(types, file_data, is_class.group("body"), space = space, parent = is_class.group("name"))
 
             if is_class.group("end") != None and len(is_class.group("end")) > 0:
-                _parse_class(types, file_data, is_class.group("end"), space = space)
+                _parse_class(types, file_data, is_class.group("end"), space = space, ignore_comms = ignore_comms)
 
     else:
         if ignore_comms:
