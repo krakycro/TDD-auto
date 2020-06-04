@@ -25,8 +25,8 @@ FUNCTION = \
         r"((?P<fnc_body>.*?)}\s*\/\/\s*(?P=fnc_name))?",
     "py":
         r"def([ \t]|(\\\n))+(?P<fnc_name>[a-zA-Z_][\w]*)([ \t]|(\\\n))?"
-        r"\((?P<fnc_args>(\s*[a-zA-Z_][\w:*&\{\}\[\],=\"\' \t]*\s*)*?)\)"
-        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)(?=\w)"
+        r"\((?P<fnc_args>(\s*[a-zA-Z_*][\w:\{\}\[\],=*&\"\' \t]*\s*)*?)\)"
+        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)" # removed (?=\w)
         r"(?P<fnc_body>(.*\n+(?P=ident))*.*\n)"
         r"(?P<ret_val>\Z^)?"
         r"(?P<fnc_parent>\Z^)?"
@@ -52,21 +52,16 @@ COMMENT = \
 CLASS = \
 {
     "cpp":
-        # TODO: try to remove global and end
-        r"(?P<global>.*?)?"
         r"(class|struct)\s+"
         r"(?P<name>[a-zA-Z_][\w]*)(\s*:\s*"
         r"(?P<parent>([a-zA-Z_][\w:]*::)?[a-zA-Z_][\w]*)\s?)?\s*"
-        r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)"
-        r"(?P<end>.*?\Z)",
+        r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)",
     "py":
-        r"(?P<global>(.|\n)*?)?"
         r"class([ \t]|(\\\n))+"
         r"(?P<name>[a-zA-Z_][\w]*)([ \t]|(\\\n))*"
         r"(?P<parent>\((\s*([a-zA-Z_][\w, \t]*)\s*)*?\))?"
-        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)(?=\w)"
-        r"(?P<body>(.*\n+(?P=ident))*.*\n)"
-        r"(?P<end>(.|\n)*?\Z)",
+        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)" # removed (?=\w)
+        r"(?P<body>(.*\n+(?P=ident))*.*\n)",
 }
 
 CLASS_FLAGS = \
@@ -78,18 +73,13 @@ CLASS_FLAGS = \
 NAMESPACE = \
 {
     "cpp":
-        # TODO: try to remove global and end
-        r"(?P<global>.*?)?"
         r"(?P<space>namespace\s+"
         r"(?P<name>[a-zA-Z_][\w]*)\s*"
-        r"\{(?P<body>.*?)\}\s*\/\/\s*namespace\s+(?P=name))"
-        r"(?P<end>.*?\Z)",
+        r"\{(?P<body>.*?)\}\s*\/\/\s*namespace\s+(?P=name))",
     "py":
-        r"(?P<global>.*\Z)"
         r"(?P<end>.*?\Z)?"
         r"(?P<space>\Z^)?"
-        r"(?P<name>\Z^)?"
-        r"(?P<body>\Z^)?",
+        r"(?P<name>\Z^)?",
 }
 
 INCLUDE = \
@@ -110,54 +100,56 @@ def _parse_func(types: str, file_data: dict, input_data: str, space: str = None,
         input_data,
         FUNCTION_FLAGS[types]
     )
-    for item in functions:
-        fnc_parent = item.group("fnc_parent")
-        if fnc_parent == None or len(fnc_parent) == 0:
-            fnc_parent = parent if parent != None else None
-        elif parent != None:
-            log.log_error(f"Parent {parent} clashes with {fnc_parent}")
+    item_list = [item for item in functions]
+    if len(item_list) > 0:
+        for item in item_list:
+            fnc_parent = item.group("fnc_parent")
+            if fnc_parent == None or len(fnc_parent) == 0:
+                fnc_parent = parent if parent != None else None
+            elif parent != None:
+                log.log_error(f"Parent {parent} clashes with {fnc_parent}")
 
-        ret_type = item.group("ret_type")
-        if ret_type == None:
-            ret_type = ""
+            ret_type = item.group("ret_type")
+            if ret_type == None:
+                ret_type = ""
 
-        ret_val = item.group("ret_val")
-        if ret_val == None:
-            ret_val = ""
+            ret_val = item.group("ret_val")
+            if ret_val == None:
+                ret_val = ""
 
-        fnc_type = item.group("fnc_type")
-        if fnc_type == None:
-            fnc_type = ""
+            fnc_type = item.group("fnc_type")
+            if fnc_type == None:
+                fnc_type = ""
 
-        fnc_args = item.group("fnc_args")
-        if fnc_args == None:
-            fnc_args = ""
+            fnc_args = item.group("fnc_args")
+            if fnc_args == None:
+                fnc_args = ""
 
-        name = item.group("fnc_name")
-        if fnc_parent != None:
-            name = fnc_parent + '::' + name
-        if space != None:
-            name = space + '::' + name
+            name = item.group("fnc_name")
+            if fnc_parent != None:
+                name = fnc_parent + '::' + name
+            if space != None:
+                name = space + '::' + name
 
-        fnc_name = ret_val + ' ' + name + '(' + fnc_args + ') ' + fnc_type
+            fnc_name = ret_val + ' ' + name + '(' + fnc_args + ') ' + fnc_type
 
-        to_hash = hashlib.md5((ret_val + fnc_args + fnc_type).encode()).hexdigest()
-        key =  re.sub(r"::", "_", name) + '_' + to_hash
-        if key in file_data:
-            continue
+            to_hash = hashlib.md5((ret_val + fnc_args + fnc_type).encode()).hexdigest()
+            key =  re.sub(r"::", "_", name) + '_' + to_hash
+            if key in file_data:
+                continue
 
-        file_data[key] = CObject(
-            key,
-            {
-                "space": space,
-                "ret_val": ret_val + ret_type,
-                "fnc_name": fnc_name,
-                "fnc_parent": item.group("fnc_parent"),
-                "fnc_args": [item.strip() for item in item.group("fnc_args").split(",")],
-                "fnc_type": item.group("fnc_type"),
-                "fnc_body": item.group("fnc_body"),
-            }
-        )
+            file_data[key] = CObject(
+                key,
+                {
+                    "space": space,
+                    "ret_val": ret_val + ret_type,
+                    "fnc_name": fnc_name,
+                    "fnc_parent": item.group("fnc_parent"),
+                    "fnc_args": [item.strip() for item in item.group("fnc_args").split(",")],
+                    "fnc_type": item.group("fnc_type"),
+                    "fnc_body": item.group("fnc_body"),
+                }
+            )
 
     return True
 
@@ -168,11 +160,11 @@ def _parse_comments(types: str, file_data: dict, input_data: str, space: str = N
         COMMENT[types],
         "",
         input_data,
-        re.MULTILINE | re.DOTALL
+        flags = re.MULTILINE | re.DOTALL
     )
 
     if use_class:
-        _parse_class(types, file_data, input_data, space = space, ignore_comms = True)
+        _parse_class(types, file_data, input_data, space = space, parent = parent, ignore_comms = True)
 
     else:
         _parse_func(types, file_data, input_data, space = space, parent = parent)
@@ -182,7 +174,7 @@ def _parse_comments(types: str, file_data: dict, input_data: str, space: str = N
 ##############################################################################
 
 # TODO: add cpp class init support without "// class {name}"
-def _parse_class(types: str, file_data: dict, input_data: str, space: str = None, ignore_comms: bool = False):
+def _parse_class(types: str, file_data: dict, input_data: str, space: str = None, parent: str = None, ignore_comms: bool = False):
     classes = re.finditer(
         CLASS[types],
         input_data,
@@ -190,30 +182,30 @@ def _parse_class(types: str, file_data: dict, input_data: str, space: str = None
     )
     class_list = [is_class for is_class in classes]
     if len(class_list) > 0:
+
+        glob = input_data[0:class_list[0].start()]
+        if ignore_comms:
+            _parse_func(types, file_data, glob, space = space, parent = parent)
+
+        else:
+            _parse_comments(types, file_data, glob, space = space, parent = parent)
+
         for is_class in class_list:
-            if is_class.group("global") != None and len(is_class.group("global")) > 0:
-                if ignore_comms:
-                    _parse_func(types, file_data, is_class.group("global"), space = space)
+            new_parent = is_class.group("name")
+            if parent != None:
+                new_parent = parent + "::" + is_class.group("name")
 
-                else:
-                    _parse_comments(types, file_data, is_class.group("global"), space = space)
+            _parse_class(types, file_data, is_class.group("body"), space = space, parent = new_parent, ignore_comms = ignore_comms)
 
-            if is_class.group("body") != None and len(is_class.group("body")) > 0:
-                if ignore_comms:
-                    _parse_func(types, file_data, is_class.group("body"), space = space, parent = is_class.group("name"))
-
-                else:
-                    _parse_comments(types, file_data, is_class.group("body"), space = space, parent = is_class.group("name"))
-
-            if is_class.group("end") != None and len(is_class.group("end")) > 0:
-                _parse_class(types, file_data, is_class.group("end"), space = space, ignore_comms = ignore_comms)
+        end = input_data[class_list[-1].end():]
+        _parse_class(types, file_data, end, space = space, parent = parent, ignore_comms = ignore_comms)
 
     else:
         if ignore_comms:
-            _parse_func(types, file_data, input_data, space = space)
+            _parse_func(types, file_data, input_data, space = space, parent = parent)
 
         else:
-            _parse_comments(types, file_data, input_data, space = space)
+            _parse_comments(types, file_data, input_data, space = space, parent = parent)
 
     return True
 
@@ -227,15 +219,15 @@ def _parse_namespace(types: str, file_data: dict, input_data: str, ignore_comms:
     )
     space_list = [space for space in namespace]
     if len(space_list) > 0:
+
+        glob = input_data[0:space_list[0].start()]
+        _parse_class(types, file_data, glob, ignore_comms = ignore_comms)
+
         for space in space_list:
-            if space.group("global") != None and len(space.group("global")) > 0:
-                _parse_class(types, file_data, space.group("global"), ignore_comms = ignore_comms)
+            _parse_class(types, file_data, space.group("body"), space = space.group("name"), ignore_comms = ignore_comms)
 
-            if space.group("body") != None and len(space.group("body")) > 0:
-                _parse_class(types, file_data, space.group("body"), space = space.group("name"), ignore_comms = ignore_comms)
-
-            if space.group("end") != None and len(space.group("end")) > 0:
-                _parse_namespace(types, file_data, space.group("end"), ignore_comms)
+        end = input_data[space_list[-1].end():]
+        _parse_class(types, file_data, end, ignore_comms = ignore_comms)
 
     else:
         _parse_class(types, file_data, input_data, ignore_comms = ignore_comms)
@@ -290,11 +282,6 @@ def file_parser(types: str, root: Path, out_data: dict, input_data: Path, ignore
 
             paths.update(_parse_includes(types, input_data, file_data, buffer, ignore_comms))
             file_data = add_dict(out_data, file_data)
-
-    # elif types in log.TYPE_LIST_PY:
-    #     if input_type in log.TYPE_LIST_PY:
-    #         pass
-    #     log.log_error(f"Python not yet supported!")
 
     else:
         log.log_info(f"Unknown type: {types}")

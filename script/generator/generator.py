@@ -120,7 +120,7 @@ def run(args):
         _dir_cpp_generator(args.data, old_list, valid_list, tests)
 
     else:
-        log.log_error(f"Not yet support for generating {data.ptype}!")
+        log.log_warning(f"Not yet support for generating {args.data.ptype}!")
 
     return True
 
