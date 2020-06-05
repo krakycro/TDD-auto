@@ -26,7 +26,7 @@ FUNCTION = \
     "py":
         r"def([ \t]|(\\\n))+(?P<fnc_name>[a-zA-Z_][\w]*)([ \t]|(\\\n))?"
         r"\((?P<fnc_args>(\s*[a-zA-Z_*][\w:\{\}\[\],=*&\"\' \t]*\s*)*?)\)"
-        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)" # removed (?=\w)
+        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)" # TODO: removed (?=\w)
         r"(?P<fnc_body>(.*\n+(?P=ident))*.*\n)"
         r"(?P<ret_val>\Z^)?"
         r"(?P<fnc_parent>\Z^)?"
@@ -60,7 +60,7 @@ CLASS = \
         r"class([ \t]|(\\\n))+"
         r"(?P<name>[a-zA-Z_][\w]*)([ \t]|(\\\n))*"
         r"(?P<parent>\((\s*([a-zA-Z_][\w, \t]*)\s*)*?\))?"
-        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)" # removed (?=\w)
+        r"([ \t]|(\\\n))*:[ \t]*\n+(?P<ident>[ \t]+)" # TODO: removed (?=\w)
         r"(?P<body>(.*\n+(?P=ident))*.*\n)",
 }
 
@@ -251,7 +251,11 @@ def _parse_includes(types: str, target_name: Path, file_data: dict, input_data: 
                 paths.add(path.group("local"))
 
     if types in log.TYPE_LIST_PY:
-        _parse_comments(types, file_data, input_data, use_class = True)
+        if ignore_comms:
+            _parse_class(types, file_data, input_data, ignore_comms = ignore_comms)
+
+        else:
+            _parse_comments(types, file_data, input_data, use_class = True)
 
     else:
         _parse_namespace(types, file_data, input_data, ignore_comms)
@@ -284,7 +288,7 @@ def file_parser(types: str, root: Path, out_data: dict, input_data: Path, ignore
             file_data = add_dict(out_data, file_data)
 
     else:
-        log.log_info(f"Unknown type: {types}")
+        log.log_warning(f"No support for adapting {types}!")
 
     return paths, file_data
 
@@ -329,6 +333,7 @@ def run(args):
 
     args.data.ptype = args.input_type
 
+    # TODO: py run in different files split
     _dir_parser(args.input_folder, args.data, args.input_folder)
 
     return True

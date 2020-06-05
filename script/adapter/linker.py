@@ -129,7 +129,7 @@ def run(data: Bundle):
         _update_cpp_objs(data, data.files_in)
 
     else:
-        log.log_warning(f"Not yet support for linking {data.ptype}!")
+        log.log_info(f"No support for linking {data.ptype}!")
 
     return True
 

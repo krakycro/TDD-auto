@@ -1,0 +1,14 @@
+
+Timestamp: 2020-06-05 15:43:06.126205
+
+/*
+    def test_pero(self):
+        # Test for:  pero() 
+
+        temp = 10
+
+        self.assertTrue(True)
+        # end test_pero
+
+*/
+

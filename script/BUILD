@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:public"])
+
 py_library(
     name = "script_lib",
     srcs = glob(["**/*.py"]),

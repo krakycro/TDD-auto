@@ -1,11 +1,13 @@
-cc_test(
-    name = "//script_unit_test",
-    copts = ["-Iscript"],
+py_test(
+    name = "script_unit_test",
+    main = "script_unit_test.py",
+    data = [],
+    args = [],
     deps = [
         "//script",
-        "@gtest//:gtest_main",
-
     ],
-    srcs = glob(["//script/**/*.cpp"]),
+    srcs = [
+        "script_unit_test.py",
+    ] + glob(["script/**/*.py"]),
 )
 
