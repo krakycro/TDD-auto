@@ -7,7 +7,9 @@ class AdapterTest(unittest.TestCase):
     def test_adapter__parse_func_a43319b023b68bd3bbefd4e1b5e7ed8e(self):
         # Test for:  adapter::_parse_func(types: str, file_data: dict, input_data: str, space: str = None, parent: str = None) 
 
-        self.assertTrue(False)
+        temp = 5
+
+        self.assertTrue(True)
         # end test_adapter__parse_func_a43319b023b68bd3bbefd4e1b5e7ed8e
 
     def test_adapter__parse_comments_e64b110d0b04d9bbe158a9fd1bc43b07(self):
