@@ -3,7 +3,8 @@
 ## General
 
 This Python script generates test files for each function (or ignores it if already present) from selected project directory.
-Supporting C, C++ and Python languages.
+This tool also generates BUILD file. (C, C++ requires gtest, Python unittest)
+Supports C, C++ and Python languages.
 
 ## Arguments:
 
