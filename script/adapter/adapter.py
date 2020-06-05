@@ -252,10 +252,10 @@ def _parse_includes(types: str, target_name: Path, file_data: dict, input_data: 
 
     if types in log.TYPE_LIST_PY:
         if ignore_comms:
-            _parse_class(types, file_data, input_data, ignore_comms = ignore_comms)
+            _parse_class(types, file_data, input_data, space = target_name.stem, ignore_comms = ignore_comms)
 
         else:
-            _parse_comments(types, file_data, input_data, use_class = True)
+            _parse_comments(types, file_data, input_data, space = target_name.stem, use_class = True)
 
     else:
         _parse_namespace(types, file_data, input_data, ignore_comms)
