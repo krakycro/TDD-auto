@@ -19,7 +19,7 @@ def get_cpp_include(args, incl_list: set):
     """
     buffer = []
 
-    for incl in incl_list:
+    for incl in sorted(incl_list):
         buffer.append(TEMPLATES.GTEST["include_custom"].format(
                 incl_path = incl,
             )
@@ -77,7 +77,7 @@ def get_py_import(args, incl_list: set):
     """
     buffer = []
 
-    for incl in incl_list:
+    for incl in sorted(incl_list):
         buffer.append(TEMPLATES.PYTEST["import_custom"].format(
                 incl_path = incl,
             )
@@ -96,7 +96,7 @@ def get_py_from_import_all(args, incl_list: set):
     """
     buffer = []
 
-    for incl in incl_list:
+    for incl in sorted(incl_list):
         buffer.append(TEMPLATES.PYTEST["from_import_all"].format(
                 incl_path = incl,
             )
@@ -169,7 +169,7 @@ def get_py_main(args, includes: set):
     buffer = []
 
     main_box = TEMPLATES.PYTEST["test_main"].format(
-        imports = get_py_from_import_all(args, includes)
+        imports = get_py_from_import_all(args, sorted(includes))
     )
 
     buffer.append(main_box)

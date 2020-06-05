@@ -1,12 +1,12 @@
 import unittest
 
 from script.adapter import *
-from script.templates import *
-from script.model import *
 from script.generator import *
-from script.script import *
-from script.logger import *
 from script.linker import *
+from script.logger import *
+from script.model import *
+from script.script import *
+from script.templates import *
 from script.utils import *
 
 
