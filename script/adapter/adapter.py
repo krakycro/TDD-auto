@@ -52,10 +52,10 @@ COMMENT = \
 CLASS = \
 {
     "cpp":
-        r"(class|struct)\s+"
+        r"(?P<type>(class|struct))\s+"
         r"(?P<name>[a-zA-Z_][\w]*)(\s*:\s*"
-        r"(?P<parent>([a-zA-Z_][\w:]*::)?[a-zA-Z_][\w]*)\s?)?\s*"
-        r"\{(?P<body>.*?)\};\s*\/\/\s*(class|struct)\s+(?P=name)",
+        r"(?P<parent>([a-zA-Z_][\w:]*::)?[a-zA-Z_][\w, ]*)\s?)?\s*"
+        r"\{(?P<body>.*?)\};\s*\/\/\s*(?P=type)\s+(?P=name)",
     "py":
         r"class([ \t]|(\\\n))+"
         r"(?P<name>[a-zA-Z_][\w]*)([ \t]|(\\\n))*"

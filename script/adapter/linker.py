@@ -55,7 +55,7 @@ def _get_cpp_var_obj(value):
 def _ger_cpp_arg_obj(value):
     if isinstance(value, str) and len(value) > 0:
         pair = re.search(
-            r"^\s*(?P<ret_val>([a-zA-Z_]+\s+)*([a-zA-Z_][\w:]*)\s*(\<.*?\>)?(\s*[&*]{1,2})?)\s+"
+            r"^\s*(?P<ret_val>([a-zA-Z_]+\s+)*([a-zA-Z_][\w:]*)\s*(\<.*?\>)?(\s*[&*]{1,2})?)\s*"
             r"(?P<name>[a-zA-Z_][\w]*)\s*(?P<list>\[\s*\])?",
             value,
             re.MULTILINE
