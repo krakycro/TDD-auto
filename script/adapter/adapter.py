@@ -21,7 +21,7 @@ FUNCTION = \
         r"(?P<fnc_name>[a-zA-Z_][\w]*)\s?"
         r"\((?P<fnc_args>(\s*([a-zA-Z_][\w:*&\{\}\[\],=\"\' \t]*)|([.]{3})\s*)*?)\)"
         r"(?P<fnc_type>\s*const)?"
-        r"(?P<fnc_start>\s*([\w:{}() \t]+)?{)" # TODO: test
+        r"(?P<fnc_start>\s*([\w:\{\}\(\) \t]+)?\s*{)"
         r"((?P<fnc_body>.*?)}\s*\/\/\s*(?P=fnc_name))?",
     "py":
         r"def([ \t]|(\\\n))+(?P<fnc_name>[a-zA-Z_][\w]*)([ \t]|(\\\n))?"
